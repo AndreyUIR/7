@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import YouTube from 'react-youtube';
-import DraedonDialog from '7/DraedonDialog';
-import MainTaskMenu from '7/MainTaskMenu';
-import NumbersTask from '7/NumbersTask';
-import StringsTask from '7/StringsTask';
-import BooleanTask from '7/BooleanTask';
-import ObjectsTask from '7/ObjectsTask';
-import ArraysTask from '7/ArraysTask';
-import ForEachTask from '7/ForEachTask';
-import MapTask from '7/MapTask';
+import DraedonDialog from '7/DraedonDialog.tsx';
+import MainTaskMenu from '7/MainTaskMenu.tsx';
+import NumbersTask from '7/NumbersTask.tsx';
+import StringsTask from '7/StringsTask.tsx';
+import BooleanTask from '7/BooleanTask.tsx';
+import ObjectsTask from '7/ObjectsTask.tsx';
+import ArraysTask from '7/ArraysTask.tsx';
+import ForEachTask from '7/ForEachTask.tsx';
+import MapTask from '7/MapTask.tsx';
 import { ArrowLeft } from 'lucide-react';
 
 type ViewState = 'intro' | 'mainTask' | 'numbersTask' | 'stringsTask' | 'booleanTask' | 'objectsTask' | 'arraysTask' | 'forEachTask' | 'mapTask' | 'myStory' | 'draedonLore';
