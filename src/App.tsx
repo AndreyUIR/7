@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import YouTube from 'react-youtube';
-import DraedonDialog from './components/DraedonDialog';
-import MainTaskMenu from './components/MainTaskMenu';
-import NumbersTask from './components/NumbersTask';
-import StringsTask from './components/StringsTask';
-import BooleanTask from './components/BooleanTask';
-import ObjectsTask from './components/ObjectsTask';
-import ArraysTask from './components/ArraysTask';
-import ForEachTask from './components/ForEachTask';
-import MapTask from './components/MapTask';
-import DraedonLore from './components/DraedonLore';
+import DraedonDialog from '7/src/components/DraedonDialog';
+import MainTaskMenu from '7/src/components/MainTaskMenu';
+import NumbersTask from '7/src/components/NumbersTask';
+import StringsTask from '7/src/components/StringsTask';
+import BooleanTask from '7/src/components/BooleanTask';
+import ObjectsTask from '7/src/components/ObjectsTask';
+import ArraysTask from '7/src/components/ArraysTask';
+import ForEachTask from '7/src/components/ForEachTask';
+import MapTask from '7/src/components/MapTask';
+import DraedonLore from '7/src/components/DraedonLore';
 import { ArrowLeft } from 'lucide-react';
 
 type ViewState = 'intro' | 'mainTask' | 'numbersTask' | 'stringsTask' | 'booleanTask' | 'objectsTask' | 'arraysTask' | 'forEachTask' | 'mapTask' | 'myStory' | 'draedonLore';
