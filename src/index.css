@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-black text-white;
+  }
+}
+
+/* Custom scrollbar for Draedon theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #001111; 
+}
+::-webkit-scrollbar-thumb {
+  background: #005555; 
+  border: 1px solid #00FFFF;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #008888; 
+}
