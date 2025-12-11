@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Javascript с Дрейдоном</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: black;
+            color: white;
+            /* overflow: hidden; */
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #001111; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #005555; 
+            border: 1px solid #00FFFF;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #008888; 
+        }
+
+        /* Utilities */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-custom {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Grid Background */
+        .bg-grid-pattern {
+            background-image: linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Scanline */
+        .bg-scanline {
+            background-image: linear-gradient(transparent 50%, rgba(0,255,255,0.1) 50%);
+            background-size: 100% 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative cursor-crosshair">
+
+    <!-- Background Ambience -->
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1a1a1a] via-[#000000] to-[#000000] -z-20"></div>
+    
+    <!-- Tech Background Elements -->
+    <div class="absolute inset-0 opacity-20 pointer-events-none -z-10">
+        <div class="absolute top-10 left-10 w-32 h-32 border-t-2 border-l-2 border-[#00FFFF] rounded-tl-3xl"></div>
+        <div class="absolute bottom-10 right-10 w-32 h-32 border-b-2 border-r-2 border-[#00FFFF] rounded-br-3xl"></div>
+    </div>
+
+    <!-- Hidden YouTube Player -->
+    <div id="player" class="absolute top-0 left-0 opacity-0 pointer-events-none w-0 h-0"></div>
+
+    <!-- Back Button -->
+    <button id="btn-back" onclick="handleBack()" class="hidden absolute top-4 left-4 md:top-8 md:left-8 z-50 flex items-center gap-2 px-4 py-2 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider text-sm font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        Назад
+    </button>
+
+    <!-- Main Content Area -->
+    <div id="main-content" class="flex-1 relative z-10 pb-64">
+        
+        <!-- View: Intro (Empty, just waits) -->
+        <div id="view-intro" class="view-section h-full"></div>
+
+        <!-- View: Main Task Menu -->
+        <div id="view-mainTask" class="view-section hidden w-full max-w-6xl mx-auto p-4 md:p-8 mt-16 md:mt-20">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="menu-grid">
+                <!-- Menu items will be injected here or hardcoded -->
+            </div>
+        </div>
+
+        <!-- View: Numbers Task -->
+        <div id="view-numbersTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль вычислений: Умножение</h2>
+                <div class="flex flex-col md:flex-row gap-8 items-center justify-center mb-8">
+                    <div class="flex flex-col gap-2 w-full md:w-1/3">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Аргумент A</label>
+                        <input type="number" id="num1" class="bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all" placeholder="0">
+                    </div>
+                    <div class="text-2xl text-[#005555]">×</div>
+                    <div class="flex flex-col gap-2 w-full md:w-1/3">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Аргумент B</label>
+                        <input type="number" id="num2" class="bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all" placeholder="0">
+                    </div>
+                </div>
+                <div class="flex justify-center mb-8">
+                    <button onclick="calculateNumbers()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Вычислить</button>
+                </div>
+                <div id="num-result-container" class="hidden border-t border-[#00FFFF]/30 pt-6 text-center animate-pulse-custom">
+                    <span class="text-[#008888] uppercase tracking-wider mr-4">Результат:</span>
+                    <span id="num-result" class="text-4xl font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.8)]"></span>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function multiply(a, b) {</p>
+                <p class="pl-4">return a * b;</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: Strings Task -->
+        <div id="view-stringsTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль обработки строк: Trim</h2>
+                <div class="flex flex-col gap-6 mb-8">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Входная строка</label>
+                        <div class="relative">
+                            <input type="text" id="str-input" value="   Система обнаружена.   " oninput="updateStrLen()" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 pr-12 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono">
+                            <div class="absolute right-3 top-3 text-[#005555] text-xs pointer-events-none">LEN: <span id="str-len">25</span></div>
+                        </div>
+                        <p class="text-xs text-[#005555]">* Пробелы визуально могут быть не видны, но они учитываются в длине строки.</p>
+                    </div>
+                    <div class="flex justify-center">
+                        <button onclick="trimString()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Удалить пробелы</button>
+                    </div>
+                    <div id="str-result-container" class="hidden border-t border-[#00FFFF]/30 pt-6 animate-pulse-custom">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm uppercase tracking-wider text-[#008888]">Результат</label>
+                            <div class="relative">
+                                <div id="str-result" class="w-full bg-[#002222] border border-[#00FFFF] text-[#00FFFF] p-3 font-mono"></div>
+                                <div class="absolute right-3 top-3 text-[#008888] text-xs">LEN: <span id="str-result-len"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function trimSpaces(str) {</p>
+                <p class="pl-4 text-[#00AAAA]">// Удаляет пробелы в начале и конце</p>
+                <p class="pl-4">return str.replace(/^\s+|\s+$/g, '');</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: Boolean Task -->
+        <div id="view-booleanTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль логики: Сравнение</h2>
+                <div class="flex flex-col md:flex-row gap-8 items-center justify-center mb-8">
+                    <div class="flex flex-col gap-4 items-center w-full md:w-1/3">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Значение A</label>
+                        <input type="text" id="bool1" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 text-center focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono text-xl" placeholder="Любое значение">
+                    </div>
+                    <div class="text-2xl text-[#005555]">===</div>
+                    <div class="flex flex-col gap-4 items-center w-full md:w-1/3">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Значение B</label>
+                        <input type="text" id="bool2" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 text-center focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono text-xl" placeholder="Любое значение">
+                    </div>
+                </div>
+                
+                <div class="flex justify-center mb-8">
+                    <button onclick="compareBooleans()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Сравнить</button>
+                </div>
+                <div id="bool-result-container" class="hidden border-t border-[#00FFFF]/30 pt-6 text-center animate-pulse-custom">
+                    <span class="text-[#008888] uppercase tracking-wider mr-4">Результат:</span>
+                    <span id="bool-result" class="text-4xl font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.8)]"></span>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function isSame(a, b) {</p>
+                <p class="pl-4 text-[#00AAAA]">// Сравнивает два значения</p>
+                <p class="pl-4">return a === b;</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: Objects Task -->
+        <div id="view-objectsTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль объектов: Проверка ключа</h2>
+                <div class="flex flex-col md:flex-row gap-8 mb-8">
+                    <div class="flex flex-col gap-2 w-full md:w-2/3">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Объект (JSON)</label>
+                        <textarea id="obj-json" class="w-full h-48 bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono text-sm resize-none" placeholder="{}">{
+  "id": 1,
+  "name": "Draedon",
+  "active": true
+}</textarea>
+                    </div>
+                    <div class="flex flex-col gap-6 w-full md:w-1/3">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm uppercase tracking-wider text-[#008888]">Искомый ключ</label>
+                            <input type="text" id="obj-key" value="name" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono" placeholder="key">
+                        </div>
+                        <button onclick="checkObject()" class="w-full py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Проверить</button>
+                        <div id="obj-error" class="hidden text-[#FF0000] text-sm animate-pulse border border-[#FF0000]/50 p-2 bg-[#220000]"></div>
+                        <div id="obj-result-container" class="hidden border border-[#00FFFF]/30 p-4 text-center animate-pulse-custom bg-[#001111]">
+                            <span class="text-[#008888] uppercase tracking-wider block mb-2">Результат</span>
+                            <span id="obj-result" class="text-3xl font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.8)]"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function hasKey(obj, key) {</p>
+                <p class="pl-4 text-[#00AAAA]">// Проверяет наличие ключа в объекте</p>
+                <p class="pl-4">return key in obj;</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: Arrays Task -->
+        <div id="view-arraysTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль массивов: Последний элемент</h2>
+                <div class="flex flex-col gap-6 mb-8">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Входной массив (через запятую)</label>
+                        <input type="text" id="arr-input" value="10, 20, 30, 42, 50" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono" placeholder="1, 2, 3, ...">
+                    </div>
+                    <div class="flex justify-center">
+                        <button onclick="getLastElement()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Получить элемент</button>
+                    </div>
+                    <div id="arr-result-container" class="hidden border-t border-[#00FFFF]/30 pt-6 animate-pulse-custom text-center">
+                        <span class="text-[#008888] uppercase tracking-wider mr-4">Результат:</span>
+                        <span id="arr-result" class="text-4xl font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.8)] text-[#00FFFF]"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function getLastElement(array) {</p>
+                <p class="pl-4 text-[#00AAAA]">// Возвращает последний элемент массива</p>
+                <p class="pl-4">return array[array.length - 1];</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: ForEach Task -->
+        <div id="view-forEachTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль ForEach: Фильтр четных</h2>
+                <div class="flex flex-col gap-6 mb-8">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Входной массив чисел</label>
+                        <input type="text" id="foreach-input" value="1, 2, 3, 4, 5, 6, 7, 8, 9, 10" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono" placeholder="1, 2, 3, ...">
+                    </div>
+                    <div class="flex justify-center">
+                        <button onclick="processForEach()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Обработать</button>
+                    </div>
+                    <div id="foreach-logs-container" class="hidden border-t border-[#00FFFF]/30 pt-6">
+                        <label class="text-sm uppercase tracking-wider text-[#008888] block mb-2">Вывод консоли:</label>
+                        <div id="foreach-logs" class="bg-[#001111] border border-[#005555] p-4 font-mono text-[#00FF00] h-48 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function logEven(array) {</p>
+                <p class="pl-4">array.forEach(num => {</p>
+                <p class="pl-8 text-[#00AAAA]">// Выводит только четные числа</p>
+                <p class="pl-8">if (num % 2 === 0) console.log(num);</p>
+                <p class="pl-4">});</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: Map Task -->
+        <div id="view-mapTask" class="view-section hidden w-full max-w-4xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Модуль Map: Удвоение значений</h2>
+                <div class="flex flex-col gap-6 mb-8">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm uppercase tracking-wider text-[#008888]">Входной массив чисел</label>
+                        <input type="text" id="map-input" value="1, 2, 3, 5, 8, 13" class="w-full bg-[#001111] border border-[#005555] text-[#00FFFF] p-3 focus:border-[#00FFFF] focus:outline-none focus:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all font-mono" placeholder="1, 2, 3, ...">
+                    </div>
+                    <div class="flex justify-center">
+                        <button onclick="processMap()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Удвоить</button>
+                    </div>
+                    <div id="map-result-container" class="hidden border-t border-[#00FFFF]/30 pt-6 animate-pulse-custom">
+                        <label class="text-sm uppercase tracking-wider text-[#008888] block mb-2">Результат (Новый массив):</label>
+                        <div id="map-result" class="bg-[#002222] border border-[#00FFFF] p-4 font-mono text-[#00FFFF] text-xl text-center"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 bg-black/90 border border-[#005555] p-4 font-mono text-sm text-[#008888] opacity-80">
+                <p class="mb-2">// Внутренняя логика</p>
+                <p>function doubleElements(array) {</p>
+                <p class="pl-4 text-[#00AAAA]">// Возвращает массив с удвоенными элементами</p>
+                <p class="pl-4">return array.map(x => x * 2);</p>
+                <p>}</p>
+            </div>
+        </div>
+
+        <!-- View: Draedon Lore -->
+        <div id="view-draedonLore" class="view-section hidden w-full max-w-6xl mx-auto p-4 md:p-8 mt-16 md:mt-20 text-[#00FFFF]">
+            <div class="bg-black/80 border border-[#00FFFF] p-6 md:p-8 shadow-[0_0_20px_rgba(0,255,255,0.2)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#00FFFF]"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#00FFFF]"></div>
+
+                <h2 class="text-2xl md:text-3xl mb-6 md:mb-8 text-center uppercase tracking-widest border-b border-[#00FFFF]/30 pb-4">Архивы Дрэйдона: История и Творения</h2>
+                
+                <div class="space-y-6 text-[#E0FFFF] leading-relaxed mb-8 text-sm md:text-base">
+                    <p>Я — Дрэйдон, главный инженер и учёный, служивший Королю-Тирану Яриму. Моя цель — совершенство через технологии и знания.</p>
+                    <p>Мои творения, Экзо-Механизмы, являются вершиной инженерной мысли. Они были созданы, чтобы превзойти богов.</p>
+                </div>
+
+                <div class="flex justify-center mb-8 gap-4">
+                     <button onclick="playBattleTheme()" class="px-6 py-2 bg-[#220000] border border-[#FF0000] text-[#FF0000] hover:bg-[#FF0000] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(255,0,0,0.2)] hover:shadow-[0_0_20px_rgba(255,0,0,0.6)] text-xs md:text-sm">
+                        Переключить на боевую тему
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                    
+                    <!-- Ares -->
+                    <div class="bg-[#001111] border border-[#005555] p-4 flex flex-col gap-4 hover:border-[#00FFFF] transition-colors group">
+                        <div class="aspect-video w-full overflow-hidden border border-[#005555] group-hover:border-[#00FFFF] relative">
+                            <img src="https://i.ytimg.com/vi/w2U31VL12xc/hqdefault.jpg" alt="XF-09 Ares" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                            <h3 class="absolute bottom-2 left-2 text-xl font-bold text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,0,0,1)]">XF-09 Ares</h3>
+                        </div>
+                        <p class="text-xs md:text-sm text-[#00AAAA] leading-relaxed">
+                            Колоссальная машина уничтожения, оснащенная четырьмя разрушительными орудиями: лазерной пушкой, пушкой Тесла, плазменной пушкой и пушкой Гаусса. Вершина артиллерийского превосходства.
+                        </p>
+                    </div>
+
+                    <!-- Thanatos -->
+                    <div class="bg-[#001111] border border-[#005555] p-4 flex flex-col gap-4 hover:border-[#00FFFF] transition-colors group">
+                        <div class="aspect-video w-full overflow-hidden border border-[#005555] group-hover:border-[#00FFFF] relative">
+                            <img src="https://preview.redd.it/xm-05-thanatos-lite-pixel-art-v0-zeownvqs252b1.png?width=1273&format=png&auto=webp&s=6e9194b7c23c6614ba9473a74df21130f4326016" alt="XM-05 Thanatos" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                            <h3 class="absolute bottom-2 left-2 text-xl font-bold text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,0,0,1)]">XM-05 Thanatos</h3>
+                        </div>
+                        <p class="text-xs md:text-sm text-[#00AAAA] leading-relaxed">
+                            Механический змей, чья броня практически непробиваема. Оснащен гамма-излучателями и способен расщеплять материю на атомы. Воплощение неотвратимой смерти.
+                        </p>
+                    </div>
+
+                    <!-- Artemis & Apollo -->
+                    <div class="bg-[#001111] border border-[#005555] p-4 flex flex-col gap-4 hover:border-[#00FFFF] transition-colors group">
+                        <div class="aspect-video w-full overflow-hidden border border-[#005555] group-hover:border-[#00FFFF] relative">
+                            <img src="https://i.ytimg.com/vi/0id8lCl1HcA/maxresdefault.jpg" alt="XS-01 Artemis & XS-03 Apollo" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                            <h3 class="absolute bottom-2 left-2 text-xl font-bold text-[#00FFFF] drop-shadow-[0_0_5px_rgba(0,0,0,1)]">XS-01 Artemis & XS-03 Apollo</h3>
+                        </div>
+                        <p class="text-xs md:text-sm text-[#00AAAA] leading-relaxed">
+                            Парные оптические единицы. Артемида обеспечивает высокоточный огонь оранжевыми экзо-лучами, в то время как Аполлон накрывает площадь шквалом зеленой плазмы. Идеальная координация.
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="flex justify-center">
+                    <button onclick="handleBack()" class="px-8 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Назад к выбору</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Dialog Overlay -->
+    <div id="draedon-dialog" class="fixed left-0 w-full p-4 md:p-8 flex justify-center items-end z-50 pointer-events-none bottom-12 transition-all duration-700 transform translate-y-20 opacity-0">
+        <div class="pointer-events-auto w-full max-w-4xl bg-black/90 border-2 border-[#00FFFF] shadow-[0_0_20px_rgba(0,255,255,0.3)] rounded-lg overflow-hidden relative font-['Share_Tech_Mono']">
+            <!-- Header -->
+            <div class="h-8 bg-[#003333] border-b border-[#00FFFF] flex items-center px-4 justify-between">
+                <div class="flex gap-2">
+                    <div class="w-3 h-3 bg-[#00FFFF] rounded-full animate-pulse"></div>
+                    <div class="w-3 h-3 bg-[#008888] rounded-full"></div>
+                </div>
+                <span class="text-[#00FFFF] text-xs tracking-widest uppercase">Экзо-связь налажена</span>
+            </div>
+
+            <div class="p-6 md:p-8 flex flex-col md:flex-row gap-6 items-center md:items-start">
+                <!-- Portrait -->
+                <div class="w-24 h-24 md:w-32 md:h-32 border border-[#00FFFF] bg-[#001111] flex-shrink-0 relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-[url('https://avatars.mds.yandex.net/i?id=441e0291f3479ece81ff56cebf892722_l-4877016-images-thumbs&n=13')] bg-center bg-cover bg-no-repeat opacity-80 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <div class="bg-scanline absolute inset-0 pointer-events-none"></div>
+                </div>
+
+                <div class="flex-1 w-full">
+                    <div class="min-h-[80px] mb-6">
+                        <p class="text-[#E0FFFF] text-lg md:text-xl leading-relaxed tracking-wide drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">
+                            <span id="dialog-text"></span><span class="animate-pulse inline-block w-2 h-5 bg-[#00FFFF] ml-1 align-middle"></span>
+                        </p>
+                    </div>
+
+                    <div id="dialog-buttons" class="flex flex-col sm:flex-row gap-4 justify-end opacity-0 transition-opacity duration-500">
+                        <!-- Buttons injected via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Grid Effect -->
+            <div class="bg-grid-pattern absolute inset-0 pointer-events-none -z-10"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- State & Config ---
+        const MUSIC_DEFAULT = 'Py9lmMSWhb0';
+        const MUSIC_STORY = 'mvXTinTglXY';
+        const MUSIC_BATTLE = 'GPDJQg7hZ30';
+
+        let currentView = 'intro';
+        let typingInterval = null;
+        const menuOptions = [
+            "Числа", "Строки", "Булевы значения", "Объекты", 
+            "Задачи на массивы", "Задачи на обработку массивов с помощью ForEach", "Задачи на Map"
+        ];
+        const viewMap = {
+            "Числа": "numbersTask",
+            "Строки": "stringsTask",
+            "Булевы значения": "booleanTask",
+            "Объекты": "objectsTask",
+            "Задачи на массивы": "arraysTask",
+            "Задачи на обработку массивов с помощью ForEach": "forEachTask",
+            "Задачи на Map": "mapTask"
+        };
+
+        // --- Initialization ---
+        window.onload = function() {
+            initMenu();
+            // Initial timer for intro
+            setTimeout(() => {
+                showDialog("Приветствую вас в моих владениях. Что вы хотите?", true);
+            }, 7000);
+        };
+
+        function initMenu() {
+            const container = document.getElementById('menu-grid');
+            menuOptions.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = "group relative p-6 bg-black/80 border border-[#00FFFF]/30 hover:border-[#00FFFF] transition-all duration-300 text-left overflow-hidden fade-in";
+                btn.style.animationDelay = `${index * 0.1}s`;
+                btn.onclick = () => handleOptionSelect(opt);
+                btn.innerHTML = `
+                    <div class="absolute inset-0 bg-[#00FFFF]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute top-0 left-0 w-2 h-2 border-t border-l border-[#00FFFF]"></div>
+                    <div class="absolute top-0 right-0 w-2 h-2 border-t border-r border-[#00FFFF]"></div>
+                    <div class="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-[#00FFFF]"></div>
+                    <div class="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-[#00FFFF]"></div>
+                    <h3 class="text-[#00FFFF] font-['Share_Tech_Mono'] text-xl mb-2 group-hover:text-white transition-colors">${opt}</h3>
+                    <div class="h-1 w-12 bg-[#005555] group-hover:w-full group-hover:bg-[#00FFFF] transition-all duration-500"></div>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        // --- Navigation ---
+        function setView(viewId) {
+            // Music Logic
+            if (viewId === 'draedonLore') {
+                changeMusic(MUSIC_STORY);
+            } else if (currentView === 'draedonLore') {
+                changeMusic(MUSIC_DEFAULT);
+            }
+
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            
+            // Show target view
+            const target = document.getElementById(`view-${viewId}`);
+            if (target) {
+                target.classList.remove('hidden');
+                target.classList.add('fade-in');
+            }
+            
+            currentView = viewId;
+            
+            // Handle Back Button
+            const btnBack = document.getElementById('btn-back');
+            if (viewId !== 'intro' && viewId !== 'draedonLore') {
+                btnBack.classList.remove('hidden');
+            } else {
+                btnBack.classList.add('hidden');
+            }
+
+            // Update Dialog
+            updateDialogForView(viewId);
+        }
+
+        function handleBack() {
+            const isTaskView = Object.values(viewMap).includes(currentView);
+            if (isTaskView) {
+                setView('mainTask');
+            } else {
+                setView('intro');
+                showDialog("Приветствую вас в моих владениях. Что вы хотите?", true);
+            }
+        }
+
+        function handleOptionSelect(option) {
+            const targetView = viewMap[option];
+            if (targetView) {
+                setView(targetView);
+            }
+        }
+
+        function handleMainTask() {
+            setView('mainTask');
+        }
+
+        function handleMyStory() {
+            setView('draedonLore');
+        }
+
+        function changeMusic(videoId) {
+            if (player && player.loadVideoById) {
+                player.loadVideoById({
+                    videoId: videoId,
+                    startSeconds: 0
+                });
+                player.setLoop(true);
+            }
+        }
+
+        function playBattleTheme() {
+            changeMusic(MUSIC_BATTLE);
+        }
+
+        // --- Dialog Logic ---
+        function showDialog(message, showButtons = false) {
+            const dialog = document.getElementById('draedon-dialog');
+            const textEl = document.getElementById('dialog-text');
+            const buttonsEl = document.getElementById('dialog-buttons');
+            
+            // Ensure interaction
+            const dialogContent = dialog.firstElementChild;
+            dialogContent.classList.add('pointer-events-auto');
+            dialogContent.classList.remove('pointer-events-none');
+
+            // Reset
+            textEl.textContent = '';
+            buttonsEl.innerHTML = '';
+            buttonsEl.classList.add('opacity-0');
+            
+            // Show container
+            dialog.classList.remove('opacity-0', 'translate-y-20');
+            
+            // Typing effect
+            if (typingInterval) clearInterval(typingInterval);
+            let i = 0;
+            typingInterval = setInterval(() => {
+                if (i < message.length) {
+                    textEl.textContent += message.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typingInterval);
+                    // Show buttons if needed
+                    if (showButtons) {
+                        renderButtons();
+                        buttonsEl.classList.remove('opacity-0');
+                    }
+                }
+            }, 50);
+        }
+
+        function renderButtons() {
+            const container = document.getElementById('dialog-buttons');
+            container.innerHTML = `
+                <button onclick="handleMainTask()" class="px-6 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider text-sm font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Основное задание</button>
+                <button onclick="handleMyStory()" class="px-6 py-3 bg-[#002222] border border-[#00FFFF] text-[#00FFFF] hover:bg-[#00FFFF] hover:text-black transition-all duration-300 uppercase tracking-wider text-sm font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)] hover:shadow-[0_0_20px_rgba(0,255,255,0.6)]">Моя история</button>
+            `;
+        }
+
+        function updateDialogForView(viewId) {
+            const dialog = document.getElementById('draedon-dialog');
+            
+            // Adjust position based on view
+            if (viewId === 'intro') {
+                dialog.classList.remove('bottom-0');
+                dialog.classList.add('bottom-12');
+            } else {
+                dialog.classList.remove('bottom-12');
+                dialog.classList.add('bottom-0');
+            }
+
+            // Messages
+            switch(viewId) {
+                case 'mainTask':
+                    showDialog("Так значит Вас интересует использование JavaScript? Признаюсь, я удивлён, но выбирайте что вас интересует.");
+                    break;
+                case 'numbersTask':
+                    showDialog("Алгоритм 'multiply' принимает два числовых аргумента. Он выполняет арифметическую операцию умножения, возвращая произведение этих значений. Примитивное, но фундаментальное вычисление.");
+                    break;
+                case 'stringsTask':
+                    showDialog("Строковые данные часто содержат избыточную информацию. Функция 'trimSpaces' очищает данные от 'шума' в виде пробелов по краям, оставляя лишь суть. Эффективность превыше всего.");
+                    break;
+                case 'booleanTask':
+                    showDialog("Логика — основа любой вычислительной системы. Истина или ложь. Единица или ноль. Функция 'isSame' определяет идентичность двух состояний с абсолютной точностью.");
+                    break;
+                case 'objectsTask':
+                    showDialog("Объекты хранят данные в структурированном виде. Функция 'hasKey' позволяет мгновенно определить наличие необходимого параметра в сложной структуре данных.");
+                    break;
+                case 'arraysTask':
+                    showDialog("Массивы — это упорядоченные последовательности. Доступ к последнему элементу часто требуется для анализа завершающих данных потока. 'getLastElement' выполняет эту задачу.");
+                    break;
+                case 'forEachTask':
+                    showDialog("Итерация — ключ к обработке больших объемов данных. 'logEven' фильтрует поток, выделяя лишь четные значения, соответствующие заданным критериям.");
+                    break;
+                case 'mapTask':
+                    showDialog("Трансформация данных — важный этап обработки. Метод 'map' позволяет изменить каждый элемент массива согласно заданному алгоритму, создавая новую структуру.");
+                    break;
+                case 'draedonLore':
+                    // Hide dialog in lore view
+                    dialog.classList.add('opacity-0', 'translate-y-20');
+                    const dialogContent = dialog.firstElementChild;
+                    dialogContent.classList.remove('pointer-events-auto');
+                    dialogContent.classList.add('pointer-events-none');
+                    break;
+            }
+        }
+
+        // --- Task Logic ---
+
+        // Numbers
+        function calculateNumbers() {
+            const n1 = parseFloat(document.getElementById('num1').value);
+            const n2 = parseFloat(document.getElementById('num2').value);
+            const resContainer = document.getElementById('num-result-container');
+            const resText = document.getElementById('num-result');
+
+            if (!isNaN(n1) && !isNaN(n2)) {
+                resText.textContent = n1 * n2;
+                resContainer.classList.remove('hidden');
+            } else {
+                resContainer.classList.add('hidden');
+            }
+        }
+
+        // Strings
+        function updateStrLen() {
+            const val = document.getElementById('str-input').value;
+            document.getElementById('str-len').textContent = val.length;
+        }
+        function trimString() {
+            const val = document.getElementById('str-input').value;
+            const trimmed = val.replace(/^\s+|\s+$/g, '');
+            const resContainer = document.getElementById('str-result-container');
+            const resText = document.getElementById('str-result');
+            const resLen = document.getElementById('str-result-len');
+
+            resText.textContent = `"${trimmed}"`;
+            resLen.textContent = trimmed.length;
+            resContainer.classList.remove('hidden');
+        }
+
+        // Boolean
+        function compareBooleans() {
+            const v1 = document.getElementById('bool1').value;
+            const v2 = document.getElementById('bool2').value;
+            const resContainer = document.getElementById('bool-result-container');
+            const resText = document.getElementById('bool-result');
+
+            const result = v1 === v2;
+            resText.textContent = result.toString().toUpperCase();
+            resText.className = `text-4xl font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.8)] ${result ? 'text-[#00FFFF]' : 'text-[#FF0000]'}`;
+            resContainer.classList.remove('hidden');
+        }
+
+        // Objects
+        function checkObject() {
+            const jsonStr = document.getElementById('obj-json').value;
+            const key = document.getElementById('obj-key').value;
+            const errorEl = document.getElementById('obj-error');
+            const resContainer = document.getElementById('obj-result-container');
+            const resText = document.getElementById('obj-result');
+
+            try {
+                const obj = JSON.parse(jsonStr);
+                if (typeof obj !== 'object' || obj === null) throw new Error("Not an object");
+                
+                errorEl.classList.add('hidden');
+                const result = key in obj;
+                resText.textContent = result.toString().toUpperCase();
+                resText.className = `text-3xl font-bold drop-shadow-[0_0_10px_rgba(0,255,255,0.8)] ${result ? 'text-[#00FFFF]' : 'text-[#FF0000]'}`;
+                resContainer.classList.remove('hidden');
+            } catch (e) {
+                errorEl.textContent = "Ошибка: Некорректный JSON или не объект.";
+                errorEl.classList.remove('hidden');
+                resContainer.classList.add('hidden');
+            }
+        }
+
+        // Arrays
+        function getLastElement() {
+            const input = document.getElementById('arr-input').value;
+            const array = input.split(',').map(item => item.trim()).filter(item => item !== '');
+            const resContainer = document.getElementById('arr-result-container');
+            const resText = document.getElementById('arr-result');
+
+            if (array.length > 0) {
+                resText.textContent = array[array.length - 1];
+            } else {
+                resText.textContent = "Массив пуст";
+            }
+            resContainer.classList.remove('hidden');
+        }
+
+        // ForEach
+        function processForEach() {
+            const input = document.getElementById('foreach-input').value;
+            const numbers = input.split(',').map(item => parseFloat(item.trim())).filter(item => !isNaN(item));
+            const logsContainer = document.getElementById('foreach-logs-container');
+            const logsOutput = document.getElementById('foreach-logs');
+            
+            logsOutput.innerHTML = '';
+            const logs = [];
+            
+            numbers.forEach(num => {
+                if (num % 2 === 0) logs.push(num);
+            });
+
+            logs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = "mb-1";
+                div.textContent = `> ${log}`;
+                logsOutput.appendChild(div);
+            });
+
+            logsContainer.classList.remove('hidden');
+        }
+
+        // Map
+        function processMap() {
+            const input = document.getElementById('map-input').value;
+            const numbers = input.split(',').map(item => parseFloat(item.trim())).filter(item => !isNaN(item));
+            const resContainer = document.getElementById('map-result-container');
+            const resText = document.getElementById('map-result');
+
+            const doubled = numbers.map(x => x * 2);
+            resText.textContent = `[ ${doubled.join(', ')} ]`;
+            resContainer.classList.remove('hidden');
+        }
+
+        // --- YouTube API ---
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '0',
+                width: '0',
+                videoId: 'Py9lmMSWhb0',
+                playerVars: {
+                    'autoplay': 1,
+                    'loop': 1,
+                    'playlist': 'Py9lmMSWhb0',
+                    'controls': 0,
+                    'showinfo': 0,
+                    'modestbranding': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+        function onPlayerReady(event) {
+            event.target.playVideo();
+            event.target.setVolume(50); // Optional volume set
+        }
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                player.playVideo();
+            }
+        }
+    </script>
+</body>
+</html>
